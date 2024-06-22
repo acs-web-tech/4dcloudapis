@@ -1,0 +1,6 @@
+SIMILARITY_SEARCH_WITH_SCORE = "similarity_search_with_score"
+ASIMILARITY_SEARCH_BY_VECTOR = "asimilarity_search_by_vector"
+ASIMILARITY_SEARCH = "asimilarity_search"
+AMAX_MARGINAL_RELEVANCE_SEARCH = "amax_marginal_relevance_search"
+AMAX_MARGINAL_RELEVANCE_SEARCH_BY_VECTOR = "amax_marginal_relevance_search_by_vector"
+ASIMILARITY_SEARCH_WITH_RELEVANCE_SCORES = "asimilarity_search_with_relevance_scores"
