@@ -46,9 +46,16 @@ class FDVectorStore :
     def clear(self):
        dbresponse = self.dbconnection.query("MATCH(N) DELETE N")
        return dbresponse
-    def delete(self,queryDict):
-       dbresponse = self.dbconnection.query(f"MATCH(a:Chunk {queryDict}) DELETE a")
+    def delete(self,field,query):
+       dbresponse = self.dbconnection.query(f"MATCH(a:Chunk {{{field}:'{query}'}})   DELETE a")
        return dbresponse
+    def select_node(self,query,id):
+        dbresponse = self.dbconnection.query("MATCH(a:Chunk {{{field}:'{query}'}})  RETURN a{{.*,embedding:null}}".format(field=id,query=query))
+        return dbresponse
+    def select_all(self):
+        dbresponse = self.dbconnection.query(f"MATCH(n) RETURN n")
+        return dbresponse
+    
     def close(self):
        return self.dbconnection._driver.close()
        

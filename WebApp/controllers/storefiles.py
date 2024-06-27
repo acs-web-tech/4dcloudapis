@@ -56,4 +56,21 @@ def json_to_doc(request):
         return False
 def docs_to_json(doc):
     return {"matched_content":doc[0].page_content,"meta_data":doc[0].metadata,"score":doc[1]}
-    
+def vector_node_list(request):
+    body = request.get_json()
+    getConnection = default_iterator_search(request.userdata["projects"],body["projectid"])
+    vector_store =  FDVectorStore(url=getConnection["connection_url"],password=getConnection["password"]
+    ,username="neo4j")
+    docs = vector_store.select_node(body["query"],body["field"])
+    #array = list(map(docs_to_json,docs))
+    vector_store.close()
+    return docs
+def vector_delete(request):
+    body = request.get_json()
+    getConnection = default_iterator_search(request.userdata["projects"],body["projectid"])
+    vector_store =  FDVectorStore(url=getConnection["connection_url"],password=getConnection["password"]
+    ,username="neo4j")
+    docs = vector_store.delete(body["field"],body["query"])
+    #array = list(map(docs_to_json,docs))
+    vector_store.close()
+    return docs
