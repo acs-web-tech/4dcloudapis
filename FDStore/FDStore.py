@@ -8,17 +8,17 @@ from typing import Any, Callable, Dict, List, Optional, cast
 nest_asyncio.apply()
 load_dotenv()
 class FDVectorStore :
-    def __init__(self,url,username,password) -> None:
+    def __init__(self,url,username,password,database) -> None:
         self.embedding = OpenAIEmbeddings(dimensions=1536,model="text-embedding-3-large")
-        self.dbconnection = Neo4jVector(embedding=self.embedding,url=url,username=username, password=password)
+        self.dbconnection = Neo4jVector(embedding=self.embedding,url=url,username=username, password=password,database=database)
         self.connectionString =url
         self.username =  username
         self.password = password
         self.queryStore = None
       
-    def FDStoreAdd(self,embedding=None,docs=[]):
+    def FDStoreAdd(self,embedding=None,docs=[],database=""):
            try :
-             self.dbconnection.from_documents(documents=docs,embedding=self.embedding,url=self.connectionString,username="neo4j",password=self.password)
+             self.dbconnection.from_documents(documents=docs,embedding=self.embedding,url=self.connectionString,username="neo4j",password=self.password,database=database)
              if  self.dbconnection :     
                return "Upserted"
            except Exception as error:
@@ -41,21 +41,33 @@ class FDVectorStore :
        doc = self.queryStore[kargs["searchType"]](**kargs)
        return doc
     def createProject(self,dbname):
-       dbresponse = self.dbconnection.query(f"CREATE DATABASE {dbname}")
+       dbresponse = self.dbconnection.query(f"CREATE DATABASE {dbname['projectname']}")
+       print(dbresponse)
        return dbresponse
     def clear(self):
        dbresponse = self.dbconnection.query("MATCH(N) DELETE N")
        return dbresponse
     def delete(self,field,query):
-       dbresponse = self.dbconnection.query(f"MATCH(a:Chunk {{{field}:'{query}'}})   DELETE a")
+       subquery = f"MATCH(a:Chunk {{{field}:'{query}'}})   DELETE a"
+       Intsubquery = f"MATCH(a:Chunk {{{field}:{query}}})   DELETE a"
+       prequery = subquery if type(query) == str  else  Intsubquery
+       dbresponse = self.dbconnection.query(prequery)
        return dbresponse
-    def select_node(self,query,id):
-        dbresponse = self.dbconnection.query("MATCH(a:Chunk {{{field}:'{query}'}})  RETURN a{{.*,embedding:null}}".format(field=id,query=query))
+    def select_node(self,prop,query,limit):
+        strquery = "MATCH(NODE:Chunk {{{field}:'{query}'}})  RETURN NODE{{.*,embedding:null}} LIMIT {limit}"
+        numberquery = "MATCH(NODE:Chunk {{{field}:{query}}})  RETURN NODE{{.*,embedding:null}} LIMIT {limit}"
+        finalQuery = strquery if type(query) == str  else  numberquery
+        dbresponse = self.dbconnection.query(finalQuery.format(field=prop,query=query,limit=limit))
         return dbresponse
-    def select_all(self):
-        dbresponse = self.dbconnection.query(f"MATCH(n) RETURN n")
+    def select_all(self,limit,pagination):
+        dbresponse = self.dbconnection.query(f"MATCH(Node) RETURN Node{{.*,embedding:null}} SKIP {pagination} Limit {limit}")
         return dbresponse
-    
+    def updateEmbedding(self,field,query,embedding):
+         subquery = f"MATCH(Node:Chunk {{{field}:'{query}'}})  SET Node.{field} ={embedding} "
+         numquery = f"MATCH(Node:Chunk {{{field}:{query}}})  SET Node.{field} ={embedding} "
+         finalQuery = subquery if type(query) == str  else  numquery
+         dbresponse = self.dbconnection.query(finalQuery)
+         return dbresponse
     def close(self):
        return self.dbconnection._driver.close()
        
